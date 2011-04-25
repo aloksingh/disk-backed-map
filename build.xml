@@ -1,0 +1,49 @@
+<project name="disk-based-map" basedir=".">
+
+    <property name="target" value="${basedir}/target"/>
+    <property name="dist" value="${target}/dist"/>
+    <property name="src" value="${basedir}/src"/>
+    <property name="test" value="${basedir}/test"/>
+    <property name="lib" value="${basedir}/lib/dist"/>
+    <property name="testlib" value="${basedir}/lib/build"/>
+
+    <path id="cp">
+        <fileset dir="${lib}" includes="*.jar,*.zip"/>
+        <fileset dir="${testlib}" includes="*.jar,*.zip"/>
+        <pathelement path="${target}/java/classes"/>
+        <pathelement path="${target}/test/classes"/>
+    </path>
+
+    <target name="init">
+        <mkdir dir="${target}"/>
+        <mkdir dir="${target}/java/classes"/>
+        <mkdir dir="${target}/test/classes"/>
+        <mkdir dir="${target}/examples/classes"/>
+        <mkdir dir="${target}/tmp/lib"/>
+        <mkdir dir="${target}/tmp/lib/examples"/>
+        <mkdir dir="${dist}"/>
+    </target>
+
+    <target name="clean">
+        <deltree dir="${target}"/>
+    </target>
+
+    <target name="compile">
+        <javac srcdir="${src}" destdir="${target}/java/classes" classpathref="cp"></javac>
+        <javac srcdir="${test}" destdir="${target}/test/classes" classpathref="cp"></javac>
+        <javac srcdir="${test}" destdir="${target}/examples/classes" classpathref="cp"></javac>
+    </target>
+    <target name="test"/>
+
+    <target name="package">
+        <jar destfile="${target}/tmp/lib/diskmap.jar" basedir="${target}/java/classes"/>
+        <jar destfile="${target}/tmp/lib/examples.jar" basedir="${target}/examples/classes"/>
+        <copydir src="${lib}" includes="*.jar, *.zip" dest="${target}/tmp/lib"/>
+        <zip destfile="${dist}/diskmap.zip">
+            <zipfileset dir="${basedir}/examples" prefix="examples"/>            
+            <zipfileset dir="${target}/tmp/lib" prefix="lib"/>
+            <zipfileset dir="${basedir}/docs" includes="README" fullpath="README"/>
+        </zip>
+    </target>
+    <target name="all" depends="clean, init, compile, package"/>
+</project>
