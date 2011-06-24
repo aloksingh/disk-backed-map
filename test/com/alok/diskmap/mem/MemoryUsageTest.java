@@ -16,13 +16,24 @@
 
 package com.alok.diskmap.mem;
 
+import com.alok.diskmap.Configuration;
 import com.alok.diskmap.DiskBackedMap;
 import junit.framework.TestCase;
+import org.junit.Test;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class MemoryUsageTest extends TestCase {
+    public void testLargeArray(){
+        String[] array = new String[100*1000*1000];
+        for(int i = 0; i < array.length; i++){
+            array[i] = UUID.randomUUID().toString();
+        }
+    }
+
     public void testHashMapMemoryUsage(){
         long startMemory = Runtime.getRuntime().totalMemory();
         Map<Integer, String> map = new HashMap<Integer, String>();
@@ -37,11 +48,16 @@ public class MemoryUsageTest extends TestCase {
 
     public void testDiskMapMemoryUsage(){
         long startMemory = Runtime.getRuntime().totalMemory();
-        Map<Integer, String> map = new DiskBackedMap<Integer, String>("/tmp/tests");
+        Configuration configuration = new Configuration();
+        configuration.setDataDir(new File("/tmp/tests")).setFlushInterval(20000);
+        Map<Integer, String> map = new DiskBackedMap<Integer, String>(configuration);
+        long start = System.currentTimeMillis();
         for(int i = 1; i < Integer.MAX_VALUE; i++){
-            if(i %10000 == 0){
+            if(i %50000 == 0){
                 System.out.println("Average Used Memory:" + (Runtime.getRuntime().totalMemory())/i);
                 System.out.println("entries:" + i);
+                System.out.println("Time ms:" + (System.currentTimeMillis() - start));
+                start = System.currentTimeMillis();
             }
             map.put(new Integer(i), "Abcdefghijklmnopqrstuvwxyz" + Math.random());
         }

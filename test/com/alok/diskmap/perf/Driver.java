@@ -31,7 +31,7 @@ public class Driver {
         if(cfg.getName().startsWith("DiskBackedMap-Reader-Threads-1")){
             Map<String, String> map = new DiskBackedMap<String, String>(new Configuration().setDataDir(new File(args[5])).setUseNonBlockingReader(true));
             IncrementingKeyValueGen generator = new IncrementingKeyValueGen();
-            populateData(map, cfg.getItemCount(), generator);
+//            populateData(map, cfg.getItemCount(), generator);
             StatsCollector collector = new StatsCollector(cfg);
             collector.writeHeader();
             PerfTask task = new Reader(map, cfg, collector, generator);
@@ -64,7 +64,7 @@ public class Driver {
                     try {
                         thread.join();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        e.printStackTrace();
                     }
                 }
                 collector.close();

@@ -134,8 +134,8 @@ public abstract class BaseDiskIO implements DiskIO {
             Record r = new Record();
             RandomAccessFile reader = reader();
             synchronized (reader){
-                reader.seek(location);
-                r.read(reader);
+//                reader.seek(location);
+                r.read(reader.getChannel(), location);
             }
             return r;
         } catch (IOException e) {

@@ -19,6 +19,9 @@ package com.alok.diskmap;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,9 +68,37 @@ public class Record implements Comparable<Record>{
         writeDate(index);
     }
 
+    public void read(FileChannel index, long location) throws IOException {
+        try {
+            doMmapRead(index, location);
+        } catch (IOException e) {
+            System.gc();
+            System.runFinalization();
+            doMmapRead(index, location);
+        }
+    }
+
+    private void doMmapRead(FileChannel index, long location) throws IOException {
+        ByteBuffer metaBuffer;
+        metaBuffer = index.map(FileChannel.MapMode.READ_ONLY, location, 29);
+        readIndex(metaBuffer);
+        readHeader(metaBuffer);
+        metaBuffer = null;
+        ByteBuffer dataBuffer = index.map(FileChannel.MapMode.READ_ONLY, location + 29, keySize + valueSize + 2);
+        readData(dataBuffer);
+        dataBuffer = null;
+    }
+
     public void read(DataInput index) throws IOException {
-        readIndex(index);
-        readData(index);
+        byte[] bytes = new byte[29];
+        index.readFully(bytes);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        readIndex(byteBuffer);
+        readHeader(byteBuffer);
+        bytes = new byte[keySize + valueSize + 2];
+        index.readFully(bytes);
+        byteBuffer = ByteBuffer.wrap(bytes);
+        readData(byteBuffer);
     }
 
     public void writeIndex(DataOutput index) throws IOException {
@@ -79,13 +110,38 @@ public class Record implements Comparable<Record>{
         index.write(0);
     }
 
-    public void readIndex(DataInput index) throws IOException {
+    //Reads 4 + 1 + 4 + 1 + 8 + 1 = 19bytes
+    private void readIndex(ByteBuffer index) throws IOException {
         setFlag(readInt(index));
-        index.readByte();
+        index.get();
         this.hash = readInt(index);
-        index.readByte();
+        index.get();
         this.location = readLong(index);
-        index.readByte();
+        index.get();
+    }
+
+    //Reads 4 + 1 + 4 + 1 = 10 bytes
+    private void readHeader(ByteBuffer index) throws IOException {
+        this.keySize = readInt(index);
+        index.get();
+        this.valueSize = readInt(index);
+        index.get();
+        if(DEBUG){
+            logger.log(Level.SEVERE, String.format("keySize[%d], valueSize[%d]", keySize, valueSize));
+            if(keySize > 1000){
+                logger.log(Level.SEVERE, "Large key");
+            }
+        }
+    }
+
+    //Reads keySize + 1+ valueSize + 1 bytes
+    private void readData(ByteBuffer index) throws IOException {
+        this.key = new byte[keySize];
+        this.value = new byte[valueSize];
+        index.get(key);
+        index.get();
+        index.get(value);
+        index.get();
     }
 
     public void writeDate(DataOutput index) throws IOException {
@@ -99,34 +155,15 @@ public class Record implements Comparable<Record>{
         index.write(0);
     }
 
-    public void readData(DataInput index) throws IOException {
-        this.keySize = readInt(index);
-        index.readByte();
-        this.valueSize = readInt(index);
-        index.readByte();
-        if(DEBUG){
-            logger.log(Level.SEVERE, String.format("keySize[%d], valueSize[%d]", keySize, valueSize));
-            if(keySize > 1000){
-                logger.log(Level.SEVERE, "Large key");
-            }
-        }
-        this.key = new byte[keySize];
-        this.value = new byte[valueSize];
-        index.readFully(key);
-        index.readByte();
-        index.readFully(value);
-        index.readByte();
-    }
-
-    private int readInt(DataInput file) throws IOException {
+    private int readInt(ByteBuffer file) throws IOException {
         byte[] buffer = new byte[4];
-        file.readFully(buffer);
+        file.get(buffer);
         return util.byteToInt(buffer);
     }
 
-    private long readLong(DataInput file) throws IOException {
+    private long readLong(ByteBuffer file) throws IOException {
         byte[] buffer = new byte[8];
-        file.readFully(buffer);
+        file.get(buffer);
         return util.byteToLong(buffer);
     }
 
