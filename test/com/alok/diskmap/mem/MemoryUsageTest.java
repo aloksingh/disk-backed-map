@@ -18,13 +18,13 @@ package com.alok.diskmap.mem;
 
 import com.alok.diskmap.Configuration;
 import com.alok.diskmap.DiskBackedMap;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class MemoryUsageTest extends TestCase {
     public void testLargeArray(){
@@ -50,16 +50,70 @@ public class MemoryUsageTest extends TestCase {
         long startMemory = Runtime.getRuntime().totalMemory();
         Configuration configuration = new Configuration();
         configuration.setDataDir(new File("/tmp/tests")).setFlushInterval(20000);
-        Map<Integer, String> map = new DiskBackedMap<Integer, String>(configuration);
+        Map<String, String> map = new DiskBackedMap<String, String>(configuration);
         long start = System.currentTimeMillis();
-        for(int i = 1; i < Integer.MAX_VALUE; i++){
-            if(i %50000 == 0){
+        long loopStart = System.currentTimeMillis();
+        final int items = 100 * 1000 * 1000;
+        final int loopItems = 200000;
+        for(int i = 1; i < items; i++){
+            if(i % loopItems == 0){
                 System.out.println("Average Used Memory:" + (Runtime.getRuntime().totalMemory())/i);
-                System.out.println("entries:" + i);
-                System.out.println("Time ms:" + (System.currentTimeMillis() - start));
-                start = System.currentTimeMillis();
+                System.out.println(String.format("entries: %(,d", i));
+                System.out.println(String.format("Loop time: %(,d", (System.currentTimeMillis() - loopStart)));
+                System.out.println(String.format("Total time: %(,d", System.currentTimeMillis() - start));
+                loopStart = System.currentTimeMillis();
             }
-            map.put(new Integer(i), "Abcdefghijklmnopqrstuvwxyz" + Math.random());
+            String key = "App-user-" + i + "-tag-" + (i % 5);
+            map.put(key, "Abcdefghijklmnopqrstuvwxyz" + Math.random());
+        }
+        long code = 0;
+
+    }
+
+    public void testConcurrentLookup(){
+        final long start = System.currentTimeMillis();
+        final int items = 100 * 1000 * 1000;
+        final int loopItems = 200000;
+        Configuration configuration = new Configuration();
+        configuration.setDataDir(new File("/tmp/tests")).setFlushInterval(20000);
+        final Map<String, String> map = new DiskBackedMap<String, String>(configuration);
+        Callable<Boolean> reader = new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                long loopStart = System.currentTimeMillis();
+                long code = 0;
+                for(int i = 1; i < items; i++){
+                    if(i % loopItems == 0){
+                        System.out.println("Average Lookuptime:" + (System.currentTimeMillis() - start)/i);
+                        System.out.println(String.format("entries: %(,d", i));
+                        System.out.println(String.format("Loop time: %(,d", (System.currentTimeMillis() - loopStart)));
+                        System.out.println(String.format("Total time: %(,d", System.currentTimeMillis() - start));
+                        loopStart = System.currentTimeMillis();
+                    }
+                    String key = "App-user-" + i + "-tag-" + (i % 5);
+                    String value = map.get(key);
+                    if(value != null){
+                        code += value.hashCode();
+                    }else{
+                        System.out.println("Missed :" + key);
+                    }
+                }
+                return true;
+            }
+        };
+        List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        for(int i = 0; i < 10; i++){
+            futures.add(executorService.submit(reader));
+        }
+        for (Future<Boolean> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -1,11 +1,12 @@
 <component name="libraryTable">
   <library name="dist">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/lib/dist" />
-      <root url="file://$PROJECT_DIR$/lib/dist" />
+      <root url="jar://$PROJECT_DIR$/lib/dist/servlet-api-2.5-20081211.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/dist/hessian-io.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/dist/jetty-util-6.1.22.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/dist/jetty-6.1.22.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
-    <jarDirectory url="file://$PROJECT_DIR$/lib/dist" recursive="false" />
   </library>
 </component>
