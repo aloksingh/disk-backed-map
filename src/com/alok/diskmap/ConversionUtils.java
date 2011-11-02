@@ -53,8 +53,11 @@ public class ConversionUtils {
     }
 
     public int byteToInt(byte[] b) {
+        return byteToInt(b, 0);
+    }
+    public int byteToInt(byte[] b, int offset) {
         int n = 0;
-        for (int i = 0; i < 4; i++) {
+        for (int i = offset; i < offset + 4; i++) {
             n <<= 8;
             n ^= (int) b[i] & 0xFF;
         }

@@ -16,7 +16,13 @@
 
 package com.alok.diskmap;
 
-public class Node {
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+public class Node implements Externalizable
+{
     public int key;
     private long value;
     private long[] values;
@@ -26,6 +32,51 @@ public class Node {
     public int color;
 
     public Node() {
+    }
+
+    public void writeExternal(ObjectOutput objectOutput) throws IOException {
+        objectOutput.writeInt(key);
+        objectOutput.writeLong(value);
+        if(values != null){
+            objectOutput.writeInt(values.length);
+            for (long l : values) {
+                objectOutput.writeLong(l);
+            }
+        }else{
+            objectOutput.writeInt(-1);
+        }
+        if(right != null){
+            objectOutput.writeInt(1);
+            right.writeExternal(objectOutput);
+        }else {
+            objectOutput.writeInt(-1);
+        }
+        if(left != null){
+            objectOutput.writeInt(1);
+            left.writeExternal(objectOutput);
+        }else {
+            objectOutput.writeInt(-1);
+        }
+    }
+
+    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        key = objectInput.readInt();
+        value = objectInput.readLong();
+        int valLength = objectInput.readInt();
+        if(valLength > 0){
+            values = new long[valLength];
+            for (int i = 0; i<valLength; i++) {
+                values[i] = objectInput.readLong();
+            }
+        }
+        if(objectInput.readInt() == 1){
+            right = new Node();
+            right.readExternal(objectInput);
+        }
+        if(objectInput.readInt() == 1){
+            left = new Node();
+            left.readExternal(objectInput);
+        }
     }
 
     public Node(int key, long value, int color, Node left, Node right) {

@@ -18,7 +18,12 @@ package com.alok.diskmap;
 
 import com.alok.diskmap.Node.Color;
 
-public class RBTree {
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+public class RBTree implements Externalizable {
     private static final int INDENT_STEP = 4;
 
     public Node root;
@@ -387,6 +392,16 @@ public class RBTree {
     private int rehash(int h) {
         h ^= (h >>> 20) ^ (h >>> 12);
         return h ^ (h >>> 7) ^ (h >>> 4);
+    }
+
+    public void writeExternal(ObjectOutput objectOutput) throws IOException {
+        root.writeExternal(objectOutput);
+    }
+
+    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        Node node = new Node();
+        node.readExternal(objectInput);
+        root = node;
     }
 
     public interface Visitor {
