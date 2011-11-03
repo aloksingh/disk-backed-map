@@ -117,10 +117,11 @@ public class ConversionUtils {
     }
     public short byteToShort(byte[] b, int offset) {
         short n = 0;
-        for (int i = offset; i < offset + 2; i++) {
-            n <<= 8;
-            n ^= (int) b[i] & 0xFF;
+        if(offset < 0){
+            System.out.println("Error");
         }
+        n <<= 8;
+        n ^= (int) b[offset+1] & 0xFF;
         return n;
     }
 

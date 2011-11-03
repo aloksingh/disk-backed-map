@@ -53,10 +53,10 @@ public class ZipMapTest extends TestCase{
         int i = 0;
         int size = 0;
         long start = System.currentTimeMillis();
+        String value = UUID.randomUUID().toString() + UUID.randomUUID().toString();
+        String key = UUID.randomUUID().toString();
         while(true){
-            String key = UUID.randomUUID().toString();
-            String value = UUID.randomUUID().toString();
-            maps.get(i% mapCount).put(key, value.getBytes());
+            maps.get(i% mapCount).put(key + i, value.getBytes());
             i++;
             size += key.length() + value.length();
             if(i%10000 == 0){
