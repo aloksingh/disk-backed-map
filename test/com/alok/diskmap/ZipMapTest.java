@@ -17,6 +17,17 @@ public class ZipMapTest extends TestCase{
         for (String key : data.keySet()) {
             assertEquals(data.get(key), new String(zipMap.get(key)));
         }
+        for (String key : zipMap.keySet()) {
+            assertEquals(data.get(key), new String(zipMap.get(key)));
+        }
+        for (Map.Entry<String, byte[]> entry: zipMap.entrySet()) {
+            assertEquals(data.get(entry.getKey()), new String(zipMap.get(entry.getKey())));
+        }
+        for (String key : data.keySet()) {
+            zipMap.remove(key);
+            assertNull(zipMap.get(key));
+        }
+
     }
 
     public void testMapMemUsage(){
@@ -35,12 +46,13 @@ public class ZipMapTest extends TestCase{
 
     public void testZipMapMemUsage(){
         List<ZipMap> maps = new ArrayList<ZipMap>();
-        int mapCount = 20000;
+        int mapCount = 50000;
         for(int i = 0; i < mapCount; i++){
             maps.add(new ZipMap());
         }
         int i = 0;
         int size = 0;
+        long start = System.currentTimeMillis();
         while(true){
             String key = UUID.randomUUID().toString();
             String value = UUID.randomUUID().toString();
@@ -48,7 +60,9 @@ public class ZipMapTest extends TestCase{
             i++;
             size += key.length() + value.length();
             if(i%10000 == 0){
-                System.out.println("Count:" + i + ", size:" + size);
+                long time = System.currentTimeMillis() - start;
+                System.out.println("Count:" + i + ", size:" + size + ", avg time:" + (time));
+                start = System.currentTimeMillis();
             }
         }
     }
