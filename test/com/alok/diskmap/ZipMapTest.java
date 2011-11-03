@@ -20,12 +20,12 @@ public class ZipMapTest extends TestCase{
     }
 
     public void testMapMemUsage(){
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, byte[]> data = new HashMap<String, byte[]>();
         int i = 0;
         while(true){
             String key = UUID.randomUUID().toString();
             String value = UUID.randomUUID().toString();
-            data.put(key, value);
+            data.put(key, value.getBytes());
             i++;
             if(i%10000 == 0){
                 System.out.println("Size:" + i);

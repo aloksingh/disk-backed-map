@@ -1,18 +1,10 @@
 package com.alok.diskmap;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Created by IntelliJ IDEA.
- * User: aloksingh
- * Date: 11/1/11
- * Time: 11:28 PM
- * To change this template use File | Settings | File Templates.
- */
 public class ZipMap implements Map<String, byte[]>{
     private byte[] data;
     private int length;
@@ -20,6 +12,9 @@ public class ZipMap implements Map<String, byte[]>{
     private int items;
     private ConversionUtils utils = ConversionUtils.instance;
     ReadWriteLock rwl = new ReentrantReadWriteLock();
+    private static final int KEY_SIZE_LEN = 2;
+    private static final int VALUE_SIZE_LEN = 2;
+    private static final int SIZE_LEN = KEY_SIZE_LEN + VALUE_SIZE_LEN;
 
     public ZipMap(){
         init();
@@ -51,14 +46,14 @@ public class ZipMap implements Map<String, byte[]>{
             int offset = 0;
             byte[] value = (byte[])o;
             while(offset < length){
-                int keySize = utils.byteToInt(data, offset);
-                int valueSize = utils.byteToInt(data, offset + 4);
+                short keySize = utils.byteToShort(data, offset);
+                short valueSize = utils.byteToShort(data, offset + KEY_SIZE_LEN);
                 if(valueSize == value.length){
-                    if(areEqual(value, data, offset+8)){
+                    if(areEqual(value, data, offset + SIZE_LEN)){
                         return true;
                     }
                 }
-                offset = offset + keySize + valueSize + 8;
+                offset = offset + keySize + valueSize + SIZE_LEN;
             }
         }
         lock.unlock();
@@ -73,20 +68,20 @@ public class ZipMap implements Map<String, byte[]>{
             int offset = 0;
             byte[] keyBytes = ((String)o).getBytes();
             while(offset < length){
-                int keySize = utils.byteToInt(data, offset);
-                int valueSize = utils.byteToInt(data, offset + 4);
+                short keySize = utils.byteToShort(data, offset);
+                short valueSize = utils.byteToShort(data, offset + KEY_SIZE_LEN);
                 if(keySize == keyBytes.length){
-                    if(areEqual(keyBytes, data, offset+8)){
+                    if(areEqual(keyBytes, data, offset + SIZE_LEN)){
                         value = new byte[valueSize];
-                        System.arraycopy(data, offset+8, value, 0, valueSize);
+                        System.arraycopy(data, offset + SIZE_LEN, value, 0, valueSize);
                         for(int i = 0; i < (valueSize+keySize); i++){
                             data[offset + 8 + i] = -1;
                         }
                         items--;
-                        dataSize = dataSize - keySize - valueSize -8;
+                        dataSize = dataSize - keySize - valueSize - SIZE_LEN;
                     }
                 }
-                offset = offset + keySize + valueSize + 8;
+                offset = offset + keySize + valueSize + SIZE_LEN;
             }
         }
         lock.unlock();
@@ -112,18 +107,18 @@ public class ZipMap implements Map<String, byte[]>{
         if(currentValue == null){
             byte[] keyBytes = key.getBytes();
             if((bytes.length + keyBytes.length) > (data.length - length)){
-                byte[] newData = new byte[data.length + bytes.length + keyBytes.length + 8];
+                byte[] newData = new byte[data.length + bytes.length + keyBytes.length + SIZE_LEN];
                 data = newData;
             }
-            byte[] keyLenBytes = utils.intToBytes(key.getBytes().length);
-            byte[] valueLenBytes = utils.intToBytes(bytes.length);
+            byte[] keyLenBytes = utils.shortToBytes(key.getBytes().length);
+            byte[] valueLenBytes = utils.shortToBytes(bytes.length);
             System.arraycopy(keyLenBytes, 0, data, length, keyLenBytes.length);
-            System.arraycopy(valueLenBytes, 0, data, length+4, valueLenBytes.length);
-            System.arraycopy(keyBytes, 0, data, length+8, keyBytes.length);
-            System.arraycopy(bytes, 0, data, length+8+keyBytes.length, bytes.length);
-            length += keyBytes.length + bytes.length+8;
+            System.arraycopy(valueLenBytes, 0, data, length + KEY_SIZE_LEN, valueLenBytes.length);
+            System.arraycopy(keyBytes, 0, data, length + SIZE_LEN, keyBytes.length);
+            System.arraycopy(bytes, 0, data, length + SIZE_LEN + keyBytes.length, bytes.length);
+            length += keyBytes.length + bytes.length + SIZE_LEN;
             items++;
-            dataSize += keyBytes.length + bytes.length + 8;
+            dataSize += keyBytes.length + bytes.length + SIZE_LEN;
             return null;
         }else{
             remove(key);
@@ -145,16 +140,16 @@ public class ZipMap implements Map<String, byte[]>{
             int offset = 0;
             byte[] keyBytes = ((String)o).getBytes();
             while(offset < length){
-                int keySize = utils.byteToInt(data, offset);
-                int valueSize = utils.byteToInt(data, offset + 4);
+                short keySize = utils.byteToShort(data, offset);
+                short valueSize = utils.byteToShort(data, offset + KEY_SIZE_LEN);
                 if(keySize == keyBytes.length){
-                    if(areEqual(keyBytes, data, offset+8)){
+                    if(areEqual(keyBytes, data, offset + SIZE_LEN)){
                         byte[] value = new byte[valueSize];
-                        System.arraycopy(data, offset+8+keySize, value, 0, valueSize);
+                        System.arraycopy(data, offset + SIZE_LEN + keySize, value, 0, valueSize);
                         return value;
                     }
                 }
-                offset = offset + keySize + valueSize + 8;
+                offset = offset + keySize + valueSize + SIZE_LEN;
             }
         }
         return null;
@@ -180,11 +175,11 @@ public class ZipMap implements Map<String, byte[]>{
         if(length > 0){
             int offset = 0;
             while(offset < length){
-                int keySize = utils.byteToInt(data, offset);
-                int valueSize = utils.byteToInt(data, offset + 4);
-                String key = new String(data, offset + 8, keySize);
+                short keySize = utils.byteToShort(data, offset);
+                short valueSize = utils.byteToShort(data, offset + KEY_SIZE_LEN);
+                String key = new String(data, offset + SIZE_LEN, keySize);
                 keys.add(key);
-                offset = offset + keySize + valueSize + 8;
+                offset = offset + keySize + valueSize + SIZE_LEN;
             }
         }
         lock.unlock();
@@ -198,12 +193,12 @@ public class ZipMap implements Map<String, byte[]>{
         if(length > 0){
             int offset = 0;
             while(offset < length){
-                int keySize = utils.byteToInt(data, offset);
-                int valueSize = utils.byteToInt(data, offset + 4);
+                short keySize = utils.byteToShort(data, offset);
+                short valueSize = utils.byteToShort(data, offset + KEY_SIZE_LEN);
                 byte[] value = new byte[valueSize];
-                System.arraycopy(data, offset + 8 + keySize, value, 0, valueSize);
+                System.arraycopy(data, offset + SIZE_LEN + keySize, value, 0, valueSize);
                 values.add(value);
-                offset = offset + keySize + valueSize + 8;
+                offset = offset + keySize + valueSize + SIZE_LEN;
             }
         }
         lock.unlock();
@@ -217,12 +212,12 @@ public class ZipMap implements Map<String, byte[]>{
         if(length > 0){
             int offset = 0;
             while(offset < length){
-                int keySize = utils.byteToInt(data, offset);
-                int valueSize = utils.byteToInt(data, offset + 4);
-                final String key = new String(data, offset + 8, keySize);
+                short keySize = utils.byteToShort(data, offset);
+                short valueSize = utils.byteToShort(data, offset + KEY_SIZE_LEN);
+                final String key = new String(data, offset + SIZE_LEN, keySize);
                 final byte[] value = new byte[valueSize];
-                System.arraycopy(data, offset + 8 + keySize, value, 0, valueSize);
-                offset = offset + keySize + valueSize + 8;
+                System.arraycopy(data, offset + SIZE_LEN + keySize, value, 0, valueSize);
+                offset = offset + keySize + valueSize + SIZE_LEN;
                 entries.add(new Entry(){
 
                     public Object getKey() {

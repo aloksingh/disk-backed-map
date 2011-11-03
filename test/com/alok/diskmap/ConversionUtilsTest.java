@@ -34,6 +34,16 @@ public class ConversionUtilsTest extends TestCase{
         }
     }
 
+   public void testShortConversion(){
+        for(int i = 0; i < Short.MAX_VALUE; i++){
+            int k = (int) (Math.random() * Short.MAX_VALUE);
+            int j = (int) (Math.random() * Short.MIN_VALUE);
+            assertEquals(k, util.byteToShort(util.shortToBytes((short) k)));
+            assertEquals(j, util.byteToShort(util.shortToBytes((short) j)));
+            assertEquals(i, util.byteToShort(util.shortToBytes((short) i)));
+        }
+    }
+
     public void testLongConversion(){
         for(long i = 0; i < 100000; i++){
             long k = (long) (Math.random() * Long.MAX_VALUE);
