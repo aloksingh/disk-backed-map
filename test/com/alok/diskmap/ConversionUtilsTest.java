@@ -44,6 +44,12 @@ public class ConversionUtilsTest extends TestCase{
         }
     }
 
+   public void testCrc(){
+       short crc = util.crc16("foo".getBytes());
+       byte[] bytes = util.shortToBytes(crc);
+       assertEquals(crc, util.byteToShort(bytes));
+   }
+
     public void testLongConversion(){
         for(long i = 0; i < 100000; i++){
             long k = (long) (Math.random() * Long.MAX_VALUE);

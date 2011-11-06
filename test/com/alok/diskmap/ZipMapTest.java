@@ -8,7 +8,7 @@ public class ZipMapTest extends TestCase{
     public void testZipMap(){
         Map<String, String> data = new HashMap<String, String>();
         ZipMap zipMap = new ZipMap();
-        for(int i = 0; i < 10; i++){
+        for(int i = 0; i < 1000; i++){
             String key = UUID.randomUUID().toString();
             String value = UUID.randomUUID().toString();
             data.put(key, value);
@@ -42,6 +42,44 @@ public class ZipMapTest extends TestCase{
                 System.out.println("Size:" + i);
             }
         }
+    }
+
+    public void testZipMapMemReadUsage(){
+        List<ZipMap> maps = new ArrayList<ZipMap>();
+        int mapCount = 50000;
+        for(int i = 0; i < mapCount; i++){
+            maps.add(new ZipMap());
+        }
+        int i = 0;
+        int size = 0;
+        long start = System.currentTimeMillis();
+        String value = UUID.randomUUID().toString() + UUID.randomUUID().toString();
+        String key = UUID.randomUUID().toString();
+        while(i < 3*1000*1000){
+            maps.get(i% mapCount).put(key + i, value.getBytes());
+            i++;
+            size += key.length() + value.length();
+            if(i%10000 == 0){
+                long time = System.currentTimeMillis() - start;
+                System.out.println("Count:" + i + ", size:" + size + ", avg time:" + (time));
+                start = System.currentTimeMillis();
+            }
+        }
+        i = 0;
+        start = System.currentTimeMillis();
+        while(i < 3*1000*1000){
+            byte[] bytes = maps.get(i % mapCount).get(key + i);
+            if(bytes == null){
+                System.out.println("Error");
+            }
+            i++;
+            if(i%10000 == 0){
+                long time = System.currentTimeMillis() - start;
+                System.out.println("Count:" + i + ", size:" + size + ", avg read time:" + (time));
+                start = System.currentTimeMillis();
+            }
+        }
+
     }
 
     public void testZipMapMemUsage(){

@@ -111,8 +111,9 @@ public class ZipMap implements Map<String, byte[]>{
             byte[] keyBytes = key.getBytes();
             byte[] crcBytes = utils.shortToBytes(utils.crc16(keyBytes));
             if((bytes.length + keyBytes.length + CRC_LEN + SIZE_LEN) > (data.length - length)){
-                int increase = bytes.length + keyBytes.length + SIZE_LEN + CRC_LEN;
+                int increase = bytes.length + keyBytes.length + SIZE_LEN + CRC_LEN - (data.length - length);
                 byte[] newData = new byte[data.length + increase];
+                System.arraycopy(data, 0, newData, 0, data.length);
                 data = newData;
             }
             byte[] keyLenBytes = utils.shortToBytes(key.getBytes().length);
